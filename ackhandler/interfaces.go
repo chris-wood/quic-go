@@ -14,8 +14,19 @@ type SentPacketHandler interface {
 	ReceivedAck(ackFrame *wire.AckFrame, withPacketNumber protocol.PacketNumber, encLevel protocol.EncryptionLevel, recvTime time.Time) error
 	SetHandshakeComplete()
 
+	// SendingAllowed says if a packet can be sent.
+	// Sending packets might not be possible because:
+	// * we're congestion limited
+	// * we're tracking the maximum number of sent packets
 	SendingAllowed() bool
+	// TimeUntilSend is the time when the next packet should be sent.
+	// It is used for pacing packets.
 	TimeUntilSend() time.Time
+	// ShouldSendNumPackets returns the number of packets that should be sent immediately.
+	// It always returns a number greater or equal than 1.
+	// A number greater than 1 is returned when the pacing delay is smaller than the minimum pacing delay.
+	ShouldSendNumPackets() int
+
 	GetStopWaitingFrame(force bool) *wire.StopWaitingFrame
 	GetLowestPacketNotConfirmedAcked() protocol.PacketNumber
 	ShouldSendRetransmittablePacket() bool
